@@ -13,7 +13,9 @@
     <div class="info">
         <div class="search">
             <div>場所検索</div>
-            <input type="text" id="keyword"><button id="search">検索実行</button>
+            <input type="text" id="keyword" placeholder="検索文字列">
+            <button id="search">検索実行</button>
+            <input type="text" id="memo" placeholder="memo欄">
             <form action="" id="formIcon">
                 <select id="selectIcon" name="selectIcon" onchange="changeIconColor()">
                 </select>
@@ -22,12 +24,23 @@
                 <select id="selectMapType" name="selectMapType" onchange="changeMapType()">
                 </select>
             </form>
+            <button id="deleteLast">最後のマーカー削除</button>
             <button id="clear">全マーカー削除</button>
+            <p></p>
         </div>
         <!-- <div class="location">
             <div>場所: </div>
             <div id="locationDisplay"></div>
         </div> -->
+        <div class="markerinfo">
+            <div>マーカー情報</div>
+            <form action="" id="formMarker">
+                <select id="selectMarker" name="selectMarker" onchange="changeMarker()">
+                </select>
+            </form>
+            <div id="markerTitle"></div>
+            <button id="delete">マーカー削除</button>
+        </div>
         <div id="target"></div>
     </div>
 

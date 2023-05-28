@@ -2,6 +2,7 @@ var map;
 var markers = [];
 var selectedIcon;
 let selectedMapType;
+let selectedMarkerIndex;
 
 // http://waox.main.jp/news/?page_id=229
 let icons = {
@@ -52,23 +53,38 @@ function initialize() {
 
   map = new google.maps.Map(document.getElementById("map"), mapOptions);
 
-  setIconOption();
-  setMapTypeOption();
   createInitialMarkers();
 
+  setOptions();
   setEvents();
 }
 
 // ----------------------------------------------------------------
 // Options
+function removeChildren(x) {
+  if (x.hasChildNodes()) {
+    while (x.childNodes.length > 0) {
+      x.removeChild(x.firstChild);
+    }
+  }
+}
+
 function addOptions(selectName, optionDict) {
+  console.log(optionDict);
   let select = document.getElementById(selectName);
+  removeChildren(select);
   for (const [key, value] of Object.entries(optionDict)) {
     let option = document.createElement("option");
     option.text = key;
     option.value = value;
     select.appendChild(option);
   }
+}
+
+function setOptions() {
+  setIconOption();
+  setMapTypeOption();
+  setMarkerOptions();
 }
 
 function setIconOption() {
@@ -88,6 +104,19 @@ function setMapTypeOption() {
 function changeMapType() {
   selectedMapType = document.getElementById("selectMapType").value;
   map.setMapTypeId(selectedMapType);
+}
+
+function setMarkerOptions() {
+  addOptions("selectMarker", markers);
+  changeMarker();
+}
+
+function changeMarker() {
+  let marketTitle = document.getElementById("markerTitle");
+  marketTitle.innerText = "";
+  selectedMarkerIndex = document.getElementById("selectMarker").selectedIndex;
+  console.log(selectedMarkerIndex);
+  marketTitle.innerText = markers[selectedMarkerIndex].title;
 }
 
 // Marker
@@ -118,17 +147,29 @@ function createMarker(latlng, place, address, icon = icons.red) {
   });
   console.log("createMarker");
   console.log(markers);
+  setMarkerOptions();
+}
+
+function deleteMarker() {
+  markers[selectedMarkerIndex].setMap(null);
+  markers.splice(selectedMarkerIndex, 1);
+  setMarkerOptions();
+  console.log("deleteMarker");
+  console.log(markers);
 }
 
 function deleteLastMarker() {
   markers[markers.length - 1].setMap(null);
   markers.pop();
+  setMarkerOptions();
   console.log("deleteLastMarker");
   console.log(markers);
 }
 
 function deleteMakers() {
   setMapOnAll(null);
+  markers = [];
+  setMarkerOptions();
   console.log("deleteMakers");
   console.log(markers);
 }
@@ -139,27 +180,41 @@ function setMapOnAll(map) {
   }
 }
 
-// マーカーへの吹き出しの追加
 function setInfoW(place, latlng, address) {
+  let content =
+    "<a href='http://www.google.com/search?q=" +
+    place +
+    "' target='_blank'>" +
+    place;
+  let memo = document.getElementById("memo").value;
+  console.log("memo", memo);
+  if (memo) {
+    content += "<br>" + memo;
+    document.getElementById("memo").value = "";
+  }
+  //   place +
+  //   "</a><br>" +
+  //   latlng +
+  //   "<br><br>" +
+  //   address +
+  //   "<br><a href='http://www.google.com/search?q=" +
+  //   place +
+  //   "&tbm=isch' target='_blank'>画像検索 by google</a>",
   let infoWindow = new google.maps.InfoWindow({
-    content:
-      "<a href='http://www.google.com/search?q=" +
-      place +
-      "' target='_blank'>" +
-      place,
-    //   place +
-    //   "</a><br>" +
-    //   latlng +
-    //   "<br><br>" +
-    //   address +
-    //   "<br><a href='http://www.google.com/search?q=" +
-    //   place +
-    //   "&tbm=isch' target='_blank'>画像検索 by google</a>",
+    content: content,
   });
   return infoWindow;
 }
 
 function setEvents() {
+  document.getElementById("delete").addEventListener("click", function () {
+    deleteMarker();
+  });
+
+  document.getElementById("deleteLast").addEventListener("click", function () {
+    deleteLastMarker();
+  });
+
   document.getElementById("clear").addEventListener("click", function () {
     deleteMakers();
   });
@@ -182,17 +237,15 @@ function setEvents() {
         if (status == google.maps.GeocoderStatus.OK) {
           var bounds = new google.maps.LatLngBounds();
 
-          for (var i in results) {
-            if (results[0].geometry) {
-              let result = results[0];
-              var latlng = result.geometry.location;
-              var address = result.formatted_address;
-              //   let place = result.address_components[0].long_name;
-              //   document.getElementById("locationDisplay").innerText = address;
-              // 検索結果地が含まれるように範囲を拡大
-              bounds.extend(latlng);
-              createMarker(latlng, place, address, selectedIcon);
-            }
+          if (results[0].geometry) {
+            let result = results[0];
+            var latlng = result.geometry.location;
+            var address = result.formatted_address;
+            //   let place = result.address_components[0].long_name;
+            //   document.getElementById("locationDisplay").innerText = address;
+            // 検索結果地が含まれるように範囲を拡大
+            bounds.extend(latlng);
+            createMarker(latlng, place, address, selectedIcon);
           }
 
           // マーカーの位置に移動
