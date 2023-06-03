@@ -26,6 +26,10 @@
             </form>
             <button id="deleteLast">最後のマーカー削除</button>
             <button id="clear">全マーカー削除</button>
+            <button id="save">マーカー保存</button>
+            <form action="" name="setting">
+                <input type="file" name="read" onchange="readMarker()">
+            </form>
             <p></p>
         </div>
         <!-- <div class="location">
@@ -38,7 +42,10 @@
                 <select id="selectMarker" name="selectMarker" onchange="changeMarker()">
                 </select>
             </form>
-            <div id="markerTitle"></div>
+            <form action="" id="formIcon">
+                <select id="selectedMarkerIcon" name="selectedMarkerIcon" onchange="changeMarkerIconColor()">
+                </select>
+            </form>
             <button id="delete">マーカー削除</button>
         </div>
         <div id="target"></div>

@@ -1,8 +1,10 @@
 var map;
-var markers = [];
+var markerInfos = [];
 var selectedIcon;
 let selectedMapType;
 let selectedMarkerIndex;
+let searchLog = [];
+let markerInfo;
 
 // http://waox.main.jp/news/?page_id=229
 let icons = {
@@ -23,7 +25,7 @@ let mapTypes = {
   TERRAIN: google.maps.MapTypeId.TERRAIN,
 };
 
-let position_data_list = {
+let defaultPositionDatas = {
   nagatuta: {
     x: 35.53262369999999,
     y: 139.4961895,
@@ -40,19 +42,45 @@ let position_data_list = {
   },
 };
 
+class MarkerController {
+  get index() {
+    return document.getElementById("selectMarker").selectedIndex;
+  }
+  set index(value) {
+    document.getElementById("selectMarker").selectedIndex = value;
+    console.log(
+      "seletedIndex",
+      document.getElementById("selectMarker").selectedIndex
+    );
+  }
+
+  get marker() {
+    return markerInfos[this.index].marker;
+  }
+
+  updateMarkerInfo(index) {
+    this.index = markerInfos.length - 1;
+  }
+
+  moveToMarker() {
+    map.panTo(markerInfos[this.index].latlng);
+  }
+}
+
 // Set map
 function initialize() {
   var mapOptions = {
     zoom: 10,
     center: new google.maps.LatLng(
-      position_data_list.nagatuta.x,
-      position_data_list.nagatuta.y
+      defaultPositionDatas.nagatuta.x,
+      defaultPositionDatas.nagatuta.y
     ),
     minZoom: 2,
   };
 
   map = new google.maps.Map(document.getElementById("map"), mapOptions);
 
+  markerInfo = new MarkerController();
   createInitialMarkers();
 
   setOptions();
@@ -70,7 +98,6 @@ function removeChildren(x) {
 }
 
 function addOptions(selectName, optionDict) {
-  console.log(optionDict);
   let select = document.getElementById(selectName);
   removeChildren(select);
   for (const [key, value] of Object.entries(optionDict)) {
@@ -90,10 +117,30 @@ function setOptions() {
 function setIconOption() {
   addOptions("selectIcon", icons);
   changeIconColor();
+  addOptions("selectedMarkerIcon", icons);
 }
 
+// 選択されているアイコンを設定
 function changeIconColor() {
   selectedIcon = document.getElementById("selectIcon").value;
+}
+
+function changeMarker() {
+  console.log(markerInfo.marker);
+  markerInfo.moveToMarker();
+}
+
+// マーカーを再作成して色変更
+function changeMarkerIconColor() {
+  place = markerInfo.marker.title;
+  // 一度削除
+  deleteSelectedMarker();
+  //　アイコンの色を変更
+  selectedIcon = document.getElementById("selectedMarkerIcon").value;
+  // マーカーを再作成
+  searchAndMark(place);
+  //　アイコンの色を元に戻す
+  changeIconColor();
 }
 
 function setMapTypeOption() {
@@ -107,108 +154,132 @@ function changeMapType() {
 }
 
 function setMarkerOptions() {
-  addOptions("selectMarker", markers);
-  changeMarker();
-}
-
-function changeMarker() {
-  let marketTitle = document.getElementById("markerTitle");
-  marketTitle.innerText = "";
-  selectedMarkerIndex = document.getElementById("selectMarker").selectedIndex;
-  console.log(selectedMarkerIndex);
-  marketTitle.innerText = markers[selectedMarkerIndex].title;
+  markerTitleList = {};
+  markerInfos.forEach(
+    (item) => (markerTitleList[item.marker.title] = item.marker.title)
+  );
+  console.log("markerTitleList", markerTitleList);
+  addOptions("selectMarker", markerTitleList);
 }
 
 // Marker
 function createInitialMarkers() {
-  for (let key in position_data_list) {
-    let position_data = position_data_list[key];
+  for (let key in defaultPositionDatas) {
+    let position_data = defaultPositionDatas[key];
     let latlng = new google.maps.LatLng(position_data.x, position_data.y);
     createMarker(latlng, position_data.place, position_data.address);
-    position_data_list[key][latlng] = latlng;
-    console.log(position_data_list[key]);
+    defaultPositionDatas[key][latlng] = latlng;
   }
 }
 
 function createMarker(latlng, place, address, icon = icons.red) {
-  markers.push(
-    new google.maps.Marker({
-      position: latlng,
-      map: map,
-      title: place,
-      icon: icon,
-    })
-  );
-  let marker = markers[markers.length - 1];
+  console.log("createMarker", latlng, place, address, icon);
+  isExist = markerInfos.some((markerInfo) => markerInfo.place === place);
+  if (isExist) {
+    console.log(`${place} is already created.`);
+    return;
+  }
+  let marker = new google.maps.Marker({
+    position: latlng,
+    map: map,
+    title: place,
+    icon: icon,
+  });
+  markerInfos.push({
+    marker: marker,
+    place: place,
+    latlng: latlng,
+    address: address,
+  });
+  console.log("All markers", markerInfos);
   let infoWindow = setInfoW(place, latlng, address);
   infoWindow.open(map, marker);
   marker.addListener("click", function () {
     infoWindow.open(map, marker);
   });
-  console.log("createMarker");
-  console.log(markers);
   setMarkerOptions();
+  markerInfo.updateMarkerInfo(markerInfos.length - 1);
+  markerInfo.moveToMarker();
 }
 
-function deleteMarker() {
-  markers[selectedMarkerIndex].setMap(null);
-  markers.splice(selectedMarkerIndex, 1);
+function deleteMarker(index) {
+  marker = markerInfos[index].marker;
+  searchLog = searchLog.filter((place) => place != marker.title);
+  marker.setMap(null);
+  markerInfos.splice(index, 1);
   setMarkerOptions();
-  console.log("deleteMarker");
-  console.log(markers);
+  console.log("deleteMarker:", marker);
+}
+
+function deleteSelectedMarker() {
+  deleteMarker(markerInfo.index);
 }
 
 function deleteLastMarker() {
-  markers[markers.length - 1].setMap(null);
-  markers.pop();
-  setMarkerOptions();
-  console.log("deleteLastMarker");
-  console.log(markers);
+  deleteMarker(markerInfos.length - 1);
 }
 
 function deleteMakers() {
   setMapOnAll(null);
-  markers = [];
+  markerInfos = [];
+  searchLog = [];
   setMarkerOptions();
-  console.log("deleteMakers");
-  console.log(markers);
+  console.log("deleteMakers:", markerInfos);
 }
 
 function setMapOnAll(map) {
-  for (let i = 0; i < markers.length; i++) {
-    markers[i].setMap(map);
+  for (let i = 0; i < markerInfos.length; i++) {
+    markerInfos[i].setMap(map);
   }
 }
 
 function setInfoW(place, latlng, address) {
-  let content =
-    "<a href='http://www.google.com/search?q=" +
-    place +
-    "' target='_blank'>" +
-    place;
+  let content = `<a href='http://www.google.com/search?q=${place}' target='_blank'>${place}`;
   let memo = document.getElementById("memo").value;
-  console.log("memo", memo);
   if (memo) {
-    content += "<br>" + memo;
+    content += `<br>${memo}`;
     document.getElementById("memo").value = "";
   }
-  //   place +
-  //   "</a><br>" +
-  //   latlng +
-  //   "<br><br>" +
-  //   address +
-  //   "<br><a href='http://www.google.com/search?q=" +
-  //   place +
-  //   "&tbm=isch' target='_blank'>画像検索 by google</a>",
-  let infoWindow = new google.maps.InfoWindow({
+  return new google.maps.InfoWindow({
     content: content,
   });
-  return infoWindow;
+}
+
+function searchAndMark(place) {
+  searchLog.push(place);
+  console.log("searchLog: " + searchLog);
+  var geocoder = new google.maps.Geocoder();
+  let icon = selectedIcon;
+
+  geocoder.geocode(
+    {
+      address: place,
+    },
+    function (results, status) {
+      console.log("検索結果：", results);
+      if (status == google.maps.GeocoderStatus.OK) {
+        var bounds = new google.maps.LatLngBounds();
+
+        if (results[0].geometry) {
+          let result = results[0];
+          var latlng = result.geometry.location;
+          var address = result.formatted_address;
+          bounds.extend(latlng);
+          createMarker(latlng, place, address, icon);
+        }
+      } else if (status == google.maps.GeocoderStatus.ZERO_RESULTS) {
+        alert("見つかりません");
+      } else {
+        console.error(status);
+        alert("エラー発生");
+      }
+    }
+  );
 }
 
 function setEvents() {
   document.getElementById("delete").addEventListener("click", function () {
-    deleteMarker();
+    deleteSelectedMarker();
   });
 
   document.getElementById("deleteLast").addEventListener("click", function () {
@@ -219,6 +290,15 @@ function setEvents() {
     deleteMakers();
   });
 
+  document.getElementById("save").addEventListener("click", function () {
+    saveMarker();
+  });
+
+  document.forms.setting.read.addEventListener("change", function (e) {
+    let file = e.target.files[0];
+    readMarker(file);
+  });
+
   google.maps.event.addDomListener(window, "resize", function () {
     map.setCenter(mapOptions.center);
   });
@@ -226,38 +306,28 @@ function setEvents() {
   // 検索実行ボタンが押下されたとき
   document.getElementById("search").addEventListener("click", function () {
     var place = document.getElementById("keyword").value;
-    var geocoder = new google.maps.Geocoder(); // geocoderのコンストラクタ
+    searchAndMark(place);
+  });
+}
 
-    geocoder.geocode(
-      {
-        address: place,
-      },
-      function (results, status) {
-        console.log("検索結果：", results);
-        if (status == google.maps.GeocoderStatus.OK) {
-          var bounds = new google.maps.LatLngBounds();
+// settings
+function saveMarker() {
+  const blob = new Blob([searchLog.join(",")], { type: "text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "searchLog.csv";
+  link.click();
+}
 
-          if (results[0].geometry) {
-            let result = results[0];
-            var latlng = result.geometry.location;
-            var address = result.formatted_address;
-            //   let place = result.address_components[0].long_name;
-            //   document.getElementById("locationDisplay").innerText = address;
-            // 検索結果地が含まれるように範囲を拡大
-            bounds.extend(latlng);
-            createMarker(latlng, place, address, selectedIcon);
-          }
-
-          // マーカーの位置に移動
-          map.panTo(latlng);
-        } else if (status == google.maps.GeocoderStatus.ZERO_RESULTS) {
-          alert("見つかりません");
-        } else {
-          console.error(status);
-          alert("エラー発生");
-        }
-      }
-    );
+function readMarker(file) {
+  let reader = new FileReader();
+  reader.readAsText(file);
+  reader.addEventListener("load", function () {
+    placeDatas = reader.result.split(",");
+    console.log(placeDatas);
+    for (place of placeDatas) {
+      searchAndMark(place);
+    }
   });
 }
 
