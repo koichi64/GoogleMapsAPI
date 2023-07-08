@@ -10,54 +10,69 @@
 </head>
 
 <body>
-    <div class="info">
-        <div class="search">
-            <div>場所検索</div>
-            <input type="text" id="keyword" placeholder="検索文字列">
-            <button id="search">検索実行</button>
-            <input type="text" id="memo" placeholder="memo欄">
-            <form action="" id="formIcon">
-                <select id="selectIcon" name="selectIcon" onchange="changeIconColor()">
-                </select>
-            </form>
-            <form action="" id="formMapType">
-                <select id="selectMapType" name="selectMapType" onchange="changeMapType()">
-                </select>
-            </form>
-            <button id="deleteLast">最後のマーカー削除</button>
-            <button id="clear">全マーカー削除</button>
-            <button id="save">マーカー保存</button>
-            <form action="" name="setting">
-                <input type="file" name="read" onchange="readMarker()">
-            </form>
-            <p></p>
+    <div class="frame">
+        <div class="info">
+            <div class="search">
+                <div>場所検索</div>
+                <input type="text" id="keyword" placeholder="検索文字列">
+                <button id="search">検索実行</button>
+                <input type="text" id="memo" placeholder="memo欄">
+                <form action="" id="formIcon">
+                    <select id="selectIcon" name="selectIcon" onchange="changeIconColor()">
+                    </select>
+                </form>
+                <form action="" id="formMapType">
+                    <select id="selectMapType" name="selectMapType" onchange="changeMapType()">
+                    </select>
+                </form>
+                <button id="deleteLast">最後のマーカー削除</button>
+                <button id="clear">全マーカー削除</button>
+                <button id="save">マーカー保存</button>
+                <form action="" name="setting">
+                    <input type="file" name="read" onchange="readMarker()">
+                </form>
+                <p></p>
+            </div>
+            <!-- <div class="location">
+                <div>場所: </div>
+                <div id="locationDisplay"></div>
+            </div> -->
+            <div class="markerinfo">
+                <div>マーカー情報</div>
+                <form action="" id="formMarker">
+                    <select id="selectMarker" name="selectMarker" onchange="changeMarker()">
+                    </select>
+                </form>
+                <form action="" id="formIcon">
+                    <select id="selectedMarkerIcon" name="selectedMarkerIcon" onchange="changeMarkerIconColor()">
+                    </select>
+                </form>
+                <button id="delete">マーカー削除</button>
+            </div>
+            <div id="target"></div>
         </div>
-        <!-- <div class="location">
-            <div>場所: </div>
-            <div id="locationDisplay"></div>
-        </div> -->
-        <div class="markerinfo">
-            <div>マーカー情報</div>
-            <form action="" id="formMarker">
-                <select id="selectMarker" name="selectMarker" onchange="changeMarker()">
-                </select>
-            </form>
-            <form action="" id="formIcon">
-                <select id="selectedMarkerIcon" name="selectedMarkerIcon" onchange="changeMarkerIconColor()">
-                </select>
-            </form>
-            <button id="delete">マーカー削除</button>
+
+        <div class="container">
+            <div id="map"></div>
+            <div id="pano"></div>
         </div>
-        <div id="target"></div>
     </div>
 
-    <div class="container">
-        <div id="map"></div>
-    </div>
+    <script src="apikey.js"></script>
+    <script>
+        const apikey = config.apikey;
+        const api_url = `http://maps.google.com/maps/api/js?key=${apikey}&language=ja&callback=initMap`;
+        const script = document.createElement('script');
+        script.src = api_url;
+        document.body.appendChild(script);
 
-
-    <script src="http://maps.google.com/maps/api/js?key=AIzaSyBpV_3TUHvJv04MAuONSOO0venz7HDbh4k&language=ja"></script>
-    <script src="index.js"></script>
+        function initMap() {
+            const index_script = document.createElement("script");
+            index_script.src = "index.js";
+            script.defer = true
+            document.body.appendChild(index_script);
+        }
+    </script>
 </body>
 
 </html>

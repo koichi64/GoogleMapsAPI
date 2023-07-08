@@ -5,6 +5,7 @@ let selectedMapType;
 let selectedMarkerIndex;
 let searchLog = [];
 let markerInfo;
+let panorama;
 
 // http://waox.main.jp/news/?page_id=229
 let icons = {
@@ -63,22 +64,38 @@ class MarkerController {
   }
 
   moveToMarker() {
-    map.panTo(markerInfos[this.index].latlng);
+    const dstpoint = markerInfos[this.index].latlng;
+    map.panTo(dstpoint);
+    panorama.setPosition(dstpoint);
   }
 }
 
 // Set map
 function initialize() {
+  const fenway = new google.maps.LatLng(
+    defaultPositionDatas.nagatuta.x,
+    defaultPositionDatas.nagatuta.y
+  );
   var mapOptions = {
     zoom: 10,
-    center: new google.maps.LatLng(
-      defaultPositionDatas.nagatuta.x,
-      defaultPositionDatas.nagatuta.y
-    ),
+    center: fenway,
     minZoom: 2,
   };
 
   map = new google.maps.Map(document.getElementById("map"), mapOptions);
+
+  panorama = new google.maps.StreetViewPanorama(
+    document.getElementById("pano"),
+    {
+      position: fenway,
+      pov: {
+        heading: 34,
+        pitch: 10,
+      },
+    }
+  );
+
+  map.setStreetView(panorama);
 
   markerInfo = new MarkerController();
   createInitialMarkers();
@@ -308,6 +325,19 @@ function setEvents() {
     var place = document.getElementById("keyword").value;
     searchAndMark(place);
   });
+
+  // a (or left arrow key)* – rotate camera 45 degrees to the left.
+  // d (or right arrow key) – rotate camera 45 degrees to the right.
+  // w (or PageUp key) – look up towards the sky. (os x: go forward)
+  // s (or PageDown key) – look down towards the ground (os x: go backwards).
+  // up arrow **,*** – go forward
+  // down arrow**,*** – go backward
+  // + (plus key) – zoom in for a close-up view.
+  // – (minus key) – zoom out one level.
+  // double click the circle: jump the that view point
+  // double click the rectangle: zoom in to that point.
+  // TAB key: access various controls on the screen
+  // Numerical 3 key: Turn on/off 3D mode.
 }
 
 // settings
@@ -333,3 +363,10 @@ function readMarker(file) {
 
 // Initialize the map when window loading finished
 google.maps.event.addDomListener(window, "load", initialize);
+
+// // スクロールを禁止にする関数
+// function disableScroll(event) {
+//   event.preventDefault();
+// }
+// document.addEventListener("touchmove", disableScroll, { passive: false });
+// document.addEventListener("mousewheel", disableScroll, { passive: false });

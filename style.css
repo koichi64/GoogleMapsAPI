@@ -4,8 +4,13 @@ body {
   padding: 0;
 }
 
+.frame {
+  height: 100vh;
+}
+
 .info {
   margin-left: 50px;
+  height: 7vh;
 }
 
 .search * {
@@ -22,7 +27,7 @@ body {
 
 .container {
   width: 100%;
-  height: 100vh;
+  height: 93vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -33,4 +38,11 @@ body {
   width: inherit;
   height: inherit;
   /* margin: 0 auto; */
+}
+
+#map,
+#pano {
+  float: left;
+  height: 100%;
+  width: 50%;
 }
