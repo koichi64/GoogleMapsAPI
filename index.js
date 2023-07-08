@@ -26,22 +26,7 @@ let mapTypes = {
   TERRAIN: google.maps.MapTypeId.TERRAIN,
 };
 
-let defaultPositionDatas = {
-  nagatuta: {
-    x: 35.53262369999999,
-    y: 139.4961895,
-    place: "長津田",
-    address: "",
-    latlng: new google.maps.LatLng(35.53262369999999, 139.4961895),
-  },
-  nishityofu: {
-    x: 35.6570844,
-    y: 139.5300797,
-    place: "西調布",
-    address: "",
-    latlng: new google.maps.LatLng(35.6570844, 139.5300797),
-  },
-};
+let defaultPositionDatas = config.defaultPositionDatas;
 
 class MarkerController {
   get index() {
@@ -72,10 +57,7 @@ class MarkerController {
 
 // Set map
 function initialize() {
-  const fenway = new google.maps.LatLng(
-    defaultPositionDatas.nagatuta.x,
-    defaultPositionDatas.nagatuta.y
-  );
+  const fenway = new google.maps.LatLng(0, 0);
   var mapOptions = {
     zoom: 10,
     center: fenway,
