@@ -28,6 +28,51 @@ let mapTypes = {
 
 let defaultPositionDatas = config.defaultPositionDatas;
 
+function getImageMetadata() {
+  const pano = panorama.getPano();
+  console.log("pano", pano);
+  const xhr = new XMLHttpRequest();
+  const url = `https://maps.googleapis.com/maps/api/streetview/metadata?pano=${pano}&key=${authorization.apikey}`;
+  console.log("url", url);
+  xhr.open("GET", url);
+  xhr.send();
+  xhr.responseType = "json";
+  xhr.onload = () => {
+    if (xhr.readyState == 4 && xhr.status == 200) {
+      const data = xhr.response;
+      console.log("Success:", data);
+      document.getElementById("recorded_date").innerText = data.date;
+    } else {
+      console.log(`Error: ${xhr.status}`);
+    }
+  };
+}
+
+function sleep(waitSec, callbackFunc) {
+  // 経過時間（秒）
+  var spanedSec = 0;
+
+  // 1秒間隔で無名関数を実行
+  var id = setInterval(function () {
+    spanedSec++;
+
+    // 経過時間 >= 待機時間の場合、待機終了。
+    if (spanedSec >= waitSec) {
+      // タイマー停止
+      clearInterval(id);
+
+      // 完了時、コールバック関数を実行
+      if (callbackFunc) callbackFunc();
+    }
+  }, 1000);
+}
+
+function moveMap(latlng) {
+  map.panTo(latlng);
+  panorama.setPosition(latlng);
+  sleep(1, getImageMetadata);
+}
+
 class MarkerController {
   get index() {
     return document.getElementById("selectMarker").selectedIndex;
@@ -50,8 +95,7 @@ class MarkerController {
 
   moveToMarker() {
     const dstpoint = markerInfos[this.index].latlng;
-    map.panTo(dstpoint);
-    panorama.setPosition(dstpoint);
+    moveMap(dstpoint);
   }
 }
 
@@ -70,10 +114,7 @@ function initialize() {
     document.getElementById("pano"),
     {
       position: fenway,
-      pov: {
-        heading: 34,
-        pitch: 10,
-      },
+      pov: config.initialPov,
     }
   );
 
@@ -308,6 +349,31 @@ function setEvents() {
     searchAndMark(place);
   });
 
+  // map.addListener("center_changed", function () {
+  //   // マップの中心位置が変更された時の処理
+  //   // ここに移動後の処理を記述します
+  //   console.log("center_changed");
+  // });
+
+  // map.addListener("bounds_changed", function () {
+  //   // マップの中心位置が変更された時の処理
+  //   // ここに移動後の処理を記述します
+  //   console.log("bounds_changed");
+  // });
+
+  // map.addListener("dragend", function () {
+  //   // マップの中心位置が変更された時の処理
+  //   // ここに移動後の処理を記述します
+  //   console.log("dragend");
+  // });
+
+  google.maps.event.addListener(panorama, "position_changed", function () {
+    // ストリートビューパノラマの位置が変更された時の処理
+    // ここに移動後の処理を記述します
+    console.log("position_changed");
+    getImageMetadata();
+  });
+
   // a (or left arrow key)* – rotate camera 45 degrees to the left.
   // d (or right arrow key) – rotate camera 45 degrees to the right.
   // w (or PageUp key) – look up towards the sky. (os x: go forward)
@@ -320,6 +386,35 @@ function setEvents() {
   // double click the rectangle: zoom in to that point.
   // TAB key: access various controls on the screen
   // Numerical 3 key: Turn on/off 3D mode.
+  document.addEventListener("keydown", (event) => {
+    var key = event.key;
+    console.log(key);
+    console.log(panorama);
+    const currentPov = panorama.pov;
+    switch (key) {
+      case "j":
+        currentPov.pitch -= 1;
+        panorama.setPov(currentPov);
+        break;
+      case "k":
+        currentPov.pitch += 1;
+        panorama.setPov(currentPov);
+        break;
+      case "h":
+        currentPov.heading -= 4;
+        panorama.setPov(currentPov);
+        break;
+      case "l":
+        currentPov.heading += 4;
+        panorama.setPov(currentPov);
+        break;
+    }
+    // sleep(1, getImageMetadata);
+  });
+
+  map.addListener("click", function (e) {
+    moveMap(e.latLng);
+  });
 }
 
 // settings
@@ -345,10 +440,3 @@ function readMarker(file) {
 
 // Initialize the map when window loading finished
 google.maps.event.addDomListener(window, "load", initialize);
-
-// // スクロールを禁止にする関数
-// function disableScroll(event) {
-//   event.preventDefault();
-// }
-// document.addEventListener("touchmove", disableScroll, { passive: false });
-// document.addEventListener("mousewheel", disableScroll, { passive: false });

@@ -48,6 +48,8 @@
                     </select>
                 </form>
                 <button id="delete">マーカー削除</button>
+                <div>撮影時期：</div>
+                <div id="recorded_date"></div>
             </div>
             <div id="target"></div>
         </div>
@@ -60,7 +62,7 @@
 
     <script src="apikey.js"></script>
     <script>
-        const api_url = `http://maps.google.com/maps/api/js?key=${apikey}&language=ja&callback=setConfig`;
+        const api_url = `http://maps.google.com/maps/api/js?key=${authorization.apikey}&language=ja&callback=setConfig`;
         const script = document.createElement('script');
         script.src = api_url;
         document.body.appendChild(script);
